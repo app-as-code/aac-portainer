@@ -1,0 +1,73 @@
+services:
+  # --- Main Application Service ---
+  aac-portainer:
+    image: "portainer/portainer-ce:2.45.3"
+    container_name: "aac-portainer"
+    hostname: "portainer"
+    restart: "always"
+
+
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "Europe/Berlin"
+
+    ports:
+      - "9222:9443/tcp"
+      - "8000:8000/tcp"
+      - "9111:9000/tcp"
+
+    volumes:
+      - "/export/docker/aac-portainer/data:/data"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+    networks:
+      - exposed
+      - interconnect
+      - secured
+      - stack_internal
+
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.aac-portainer.rule: "Host(`portainer.example.com`)"
+      traefik.http.routers.aac-portainer.entrypoints: "websecure"
+      traefik.http.routers.aac-portainer.tls: "true"
+      traefik.http.routers.aac-portainer.tls.certresolver: "ionos"
+      traefik.docker.network: "services-secured"
+      traefik.http.services.aac-portainer.loadbalancer.server.port: "9000"
+      traefik.http.services.aac-portainer.loadbalancer.server.scheme: "http"
+      auto-dns.createWildcard.aac-portainer: "true"
+      auto-dns.customDNS.aac-portainer: "true"
+      auto-dns.customDOMAIN.aac-portainer: "example.com"
+      auto-dns.customHost.aac-portainer: "portainer"
+      homepage.group: "Management"
+      homepage.name: "Portainer"
+      homepage.href: "https://portainer.example.com"
+      homepage.icon: "portainer.png"
+      homepage.description: "Portainer Server für die Site Hetzner"
+
+
+    security_opt:
+    - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '10'
+
+
+
+networks:
+  secured:
+    name: "services-secured"
+    external: true
+  exposed:
+    name: "services-exposed"
+    external: true
+  interconnect:
+    name: "docker-default"
+    external: true
+  stack_internal:
+    name: "aac-portainer_stack_internal"
+    driver: "bridge"
+
